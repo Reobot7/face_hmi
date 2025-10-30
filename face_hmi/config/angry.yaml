@@ -1,0 +1,48 @@
+/**:
+  ros__parameters:
+    # Camera and projection settings
+    camera_frame: "camera_optical_frame"
+    fov_x_deg: 90.0
+    fov_y_deg: 60.0
+    
+    # Display settings
+    fullscreen: true
+    fps: 60
+    
+    # Eye appearance - ANGRY EYES
+    eye:
+      width_divisor: 5  # Narrower eyes
+      aspect_ratio: 0.8  # Slightly flattened, glaring
+      spacing_divisor: 3.5  # Closer together
+      vertical_position: 0.48  # Slightly lower for intense look
+    
+    pupil:
+      size_divisor: 1.8  # Larger pupil (focused, intense)
+      aspect_ratio: 1.2
+      margin_x: 8  # Moderate movement
+      margin_y: 8
+    
+    highlight:
+      size_divisor: 7  # Smaller highlight for sharper look
+      offset_x_divisor: 8
+      offset_y_divisor: 8
+    
+    gradient:
+      layers: 6
+      outer_color: 20  # Very dark, intense
+      inner_color: 0
+    
+    # Eye motion - SHARP AND DIRECT
+    motion:
+      smoothing_factor: 0.28  # Quick, decisive movement
+    
+    # Blink settings - INFREQUENT (intense stare)
+    blink:
+      enabled: true
+      interval_min: 6.0  # Blink less often
+      interval_max: 12.0
+      duration: 0.12  # Quick, sharp blink
+    
+    saccade:
+      enabled: true
+      speed_multiplier: 3.5  # Fast, aggressive saccades

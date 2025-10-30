@@ -15,15 +15,15 @@
       # Values below this are ignored to prevent jitter
       # min_threshold: 0.01
     
-    # Blink settings (for future implementation)
+    # Blink settings
     blink:
       enabled: false
-      # interval_min: 3.0  # seconds
-      # interval_max: 8.0  # seconds
-      # duration: 0.15     # seconds
+      interval_min: 3.0  # Minimum seconds between blinks
+      interval_max: 8.0  # Maximum seconds between blinks
+      duration: 0.15     # Blink duration in seconds
     
-    # Saccade settings (for future implementation)
+    # Saccade settings
     # Saccades are rapid eye movements
     saccade:
       enabled: false
-      # speed_multiplier: 3.0  # Faster than normal movement
+      speed_multiplier: 3.0  # Faster than normal movement

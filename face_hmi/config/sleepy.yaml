@@ -1,0 +1,47 @@
+/**:
+  ros__parameters:
+    # Camera and projection settings
+    camera_frame: "camera_optical_frame"
+    fov_x_deg: 90.0
+    fov_y_deg: 60.0
+    
+    # Display settings
+    fullscreen: true
+    fps: 60
+    
+    # Eye appearance - SLEEPY EYES
+    eye:
+      width_divisor: 4
+      aspect_ratio: 0.6  # Very flat, half-closed eyes
+      spacing_divisor: 3
+      vertical_position: 0.5
+    
+    pupil:
+      size_divisor: 2.2  # Slightly smaller pupil
+      aspect_ratio: 1.1  # Less elongated
+      margin_x: 15  # Restricted movement
+      margin_y: 15
+    
+    highlight:
+      size_divisor: 6  # Smaller highlight
+      offset_x_divisor: 7
+      offset_y_divisor: 7
+    
+    gradient:
+      layers: 4  # Fewer layers for softer look
+      outer_color: 50
+      inner_color: 10  # Not completely black
+    
+    # Eye motion - SLOW AND LAZY
+    motion:
+      smoothing_factor: 0.08  # Very slow, drowsy movement
+    
+    # Blink settings - FREQUENT AND SLOW
+    blink:
+      enabled: true
+      interval_min: 2.0  # Blink more frequently
+      interval_max: 4.0
+      duration: 0.25  # Slower blink
+    
+    saccade:
+      enabled: false

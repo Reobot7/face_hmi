@@ -1,0 +1,48 @@
+/**:
+  ros__parameters:
+    # Camera and projection settings
+    camera_frame: "camera_optical_frame"
+    fov_x_deg: 90.0
+    fov_y_deg: 60.0
+    
+    # Display settings
+    fullscreen: true
+    fps: 60
+    
+    # Eye appearance - SURPRISED EYES
+    eye:
+      width_divisor: 2.5  # Very large, wide open eyes
+      aspect_ratio: 1.5  # Tall, round eyes
+      spacing_divisor: 2.8  # Slightly wider apart
+      vertical_position: 0.5
+    
+    pupil:
+      size_divisor: 2.5  # Smaller pupil (dilated from surprise)
+      aspect_ratio: 1.0  # Round pupil
+      margin_x: 3  # Very wide movement range
+      margin_y: 3
+    
+    highlight:
+      size_divisor: 4  # Larger, more visible highlight
+      offset_x_divisor: 5
+      offset_y_divisor: 5
+    
+    gradient:
+      layers: 6
+      outer_color: 30  # Darker for contrast
+      inner_color: 0
+    
+    # Eye motion - QUICK AND JITTERY
+    motion:
+      smoothing_factor: 0.35  # Fast, reactive movement
+    
+    # Blink settings - RARE (surprised eyes stay open)
+    blink:
+      enabled: true
+      interval_min: 8.0  # Blink rarely
+      interval_max: 15.0
+      duration: 0.1  # Very quick blink
+    
+    saccade:
+      enabled: true
+      speed_multiplier: 4.0  # Very fast saccades

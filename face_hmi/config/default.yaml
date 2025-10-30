@@ -36,8 +36,14 @@
     motion:
       smoothing_factor: 0.15
     
+    # Blink settings
     blink:
       enabled: false
+      interval_min: 3.0
+      interval_max: 8.0
+      duration: 0.15
     
+    # Saccade settings
     saccade:
       enabled: false
+      speed_multiplier: 3.0

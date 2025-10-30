@@ -56,8 +56,16 @@ class FaceHMINode(Node):
         
         # Declare motion parameters
         self.declare_parameter('motion.smoothing_factor', 0.15)
+        
+        # Declare blink parameters
         self.declare_parameter('blink.enabled', False)
+        self.declare_parameter('blink.interval_min', 3.0)
+        self.declare_parameter('blink.interval_max', 8.0)
+        self.declare_parameter('blink.duration', 0.15)
+        
+        # Declare saccade parameters
         self.declare_parameter('saccade.enabled', False)
+        self.declare_parameter('saccade.speed_multiplier', 3.0)
         
         # Get parameters
         self.camera_frame = self.get_parameter('camera_frame').value
@@ -87,6 +95,16 @@ class FaceHMINode(Node):
         
         # Get motion parameters
         self.smoothing_factor = self.get_parameter('motion.smoothing_factor').value
+        
+        # Get blink parameters
+        self.blink_enabled = self.get_parameter('blink.enabled').value
+        self.blink_interval_min = self.get_parameter('blink.interval_min').value
+        self.blink_interval_max = self.get_parameter('blink.interval_max').value
+        self.blink_duration = self.get_parameter('blink.duration').value
+        
+        # Get saccade parameters
+        self.saccade_enabled = self.get_parameter('saccade.enabled').value
+        self.saccade_speed_multiplier = self.get_parameter('saccade.speed_multiplier').value
         
         # Initialize pygame
         pygame.init()
@@ -142,9 +160,20 @@ class FaceHMINode(Node):
         # Animation state
         self.flash_phase = 0.0
         
+        # Blink state
+        self.blink_phase = 0.0  # 0.0 = fully open, 1.0 = fully closed
+        self.is_blinking = False
+        self.blink_timer = 0.0
+        self.next_blink_time = 0.0
+        if self.blink_enabled:
+            import random
+            self.next_blink_time = random.uniform(self.blink_interval_min, self.blink_interval_max)
+        
         self.get_logger().info('faceHMI node started')
         self.get_logger().info(f'Eye appearance: width_div={self.eye_width_divisor}, aspect={self.eye_aspect_ratio}')
         self.get_logger().info(f'Motion: smoothing={self.smoothing_factor}')
+        if self.blink_enabled:
+            self.get_logger().info(f'Blink: enabled, interval={self.blink_interval_min}-{self.blink_interval_max}s, duration={self.blink_duration}s')
     
     def attention_callback(self, msg: Vector3):
         """Direct attention control"""
@@ -226,11 +255,48 @@ class FaceHMINode(Node):
         else:
             return (255, 0, 0)  # Red
     
+    def update_blink(self, dt: float):
+        """Update blink animation"""
+        if not self.blink_enabled:
+            return
+        
+        import random
+        
+        self.blink_timer += dt
+        
+        if self.is_blinking:
+            # Currently blinking
+            blink_progress = self.blink_timer / self.blink_duration
+            
+            if blink_progress < 0.5:
+                # Closing (0.0 -> 1.0)
+                self.blink_phase = blink_progress * 2.0
+            else:
+                # Opening (1.0 -> 0.0)
+                self.blink_phase = 2.0 - (blink_progress * 2.0)
+            
+            if blink_progress >= 1.0:
+                # Blink complete
+                self.is_blinking = False
+                self.blink_phase = 0.0
+                self.blink_timer = 0.0
+                self.next_blink_time = random.uniform(self.blink_interval_min, self.blink_interval_max)
+        else:
+            # Waiting for next blink
+            if self.blink_timer >= self.next_blink_time:
+                self.is_blinking = True
+                self.blink_timer = 0.0
+    
     def draw_eye(self, center_x: int, center_y: int, is_left: bool):
         """Draw a single eye with moving pupil"""
         # Eye dimensions (oval shape) - from config
         eye_width = min(self.width, self.height) // self.eye_width_divisor
         eye_height = int(eye_width * self.eye_aspect_ratio)
+        
+        # Apply blink effect (reduce visible height)
+        visible_eye_height = int(eye_height * (1.0 - self.blink_phase))
+        if visible_eye_height < 2:
+            visible_eye_height = 2  # Minimum height when blinking
         
         # Pupil dimensions - from config
         pupil_width = int(eye_width / self.pupil_size_divisor)
@@ -239,19 +305,27 @@ class FaceHMINode(Node):
         # Highlight dimensions - from config
         highlight_radius = int(pupil_width / self.highlight_size_divisor)
         
-        # Draw white of the eye (sclera) - oval
+        # Draw white of the eye (sclera) - oval with blink effect
         eye_rect = pygame.Rect(
             center_x - eye_width // 2,
-            center_y - eye_height // 2,
+            center_y - visible_eye_height // 2,
             eye_width,
-            eye_height
+            visible_eye_height
         )
         pygame.draw.ellipse(self.screen, (255, 255, 255), eye_rect)
+        
+        # If mostly closed, don't draw pupil
+        if self.blink_phase > 0.9:
+            return
         
         # Calculate pupil position based on attention
         # Limit movement to stay within the white part - from config
         max_offset_x = (eye_width - pupil_width) // 2 - self.pupil_margin_x
-        max_offset_y = (eye_height - pupil_height) // 2 - self.pupil_margin_y
+        max_offset_y = (visible_eye_height - pupil_height) // 2 - self.pupil_margin_y
+        
+        # Ensure max_offset is positive
+        if max_offset_y < 0:
+            max_offset_y = 0
         
         pupil_x = int(center_x + self.current_attention_x * max_offset_x)
         pupil_y = int(center_y - self.current_attention_y * max_offset_y)  # Invert Y for screen coords
@@ -330,10 +404,13 @@ class FaceHMINode(Node):
         self.current_attention_x += (self.target_attention_x - self.current_attention_x) * self.smoothing_factor
         self.current_attention_y += (self.target_attention_y - self.current_attention_y) * self.smoothing_factor
     
-    def render(self):
+    def render(self, dt: float):
         """Main render loop"""
         # Update smooth interpolation
         self.update_attention_interpolation()
+        
+        # Update blink animation
+        self.update_blink(dt)
         
         # Clear screen (black background)
         self.screen.fill((0, 0, 0))
@@ -373,11 +450,11 @@ class FaceHMINode(Node):
             # Process ROS callbacks
             rclpy.spin_once(self, timeout_sec=0.001)
             
-            # Render
-            self.render()
+            # Get delta time
+            dt = self.clock.tick(self.fps) / 1000.0  # Convert to seconds
             
-            # Control frame rate
-            self.clock.tick(self.fps)
+            # Render
+            self.render(dt)
         
         pygame.quit()
 

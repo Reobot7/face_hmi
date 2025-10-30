@@ -139,18 +139,27 @@ ros2 launch face_hmi face_hmi_with_config.launch.py \
 
 ### Available Configuration Files
 
+**Basic Configurations:**
 - `config/default.yaml` - Default settings
 - `config/eye_appearance.yaml` - Appearance-only settings
 - `config/eye_motion.yaml` - Motion-only settings
 - `config/large_eyes.yaml` - Preset for large expressive eyes
 - `config/quick_motion.yaml` - Preset for quick responsive motion
 
-See the [Configuration Guide](docs/CONFIGURATION.md) for detailed parameter reference and custom configuration creation.
+**Emotion Presets:**
+- `config/sleepy.yaml` - Sleepy eyes (narrow, slow movement, frequent blinking)
+- `config/surprised.yaml` - Surprised eyes (wide open, quick movement, rare blinking)
+- `config/angry.yaml` - Angry eyes (narrow, sharp movement, intense stare)
+- `config/gentle.yaml` - Gentle eyes (soft, smooth movement, calm)
+- `config/alert.yaml` - Alert eyes (attentive, quick response, scanning)
+
+See the [Configuration Guide](docs/CONFIGURATION.md) for detailed parameter reference and [Emotion Presets Guide](docs/EMOTION_PRESETS.md) for emotion expression examples.
 
 ## Documentation
 
 - [Usage Guide](docs/USAGE.md) - Detailed usage instructions and examples
 - [Configuration Guide](docs/CONFIGURATION.md) - YAML configuration file reference
+- [Emotion Presets Guide](docs/EMOTION_PRESETS.md) - Emotion expression presets (sleepy, surprised, angry, etc.)
 - [Customization Guide](docs/CUSTOMIZATION.md) - Code-level customization (deprecated, use config files instead)
 - [Roadmap](docs/ROADMAP.md) - Future features and development plans
 

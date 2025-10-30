@@ -1,0 +1,47 @@
+/**:
+  ros__parameters:
+    # Camera and projection settings
+    camera_frame: "camera_optical_frame"
+    fov_x_deg: 90.0
+    fov_y_deg: 60.0
+    
+    # Display settings
+    fullscreen: true
+    fps: 60
+    
+    # Eye appearance - GENTLE EYES
+    eye:
+      width_divisor: 3.5  # Medium-large, soft eyes
+      aspect_ratio: 1.3  # Slightly tall, round and friendly
+      spacing_divisor: 3
+      vertical_position: 0.52  # Slightly lower for warm look
+    
+    pupil:
+      size_divisor: 2.0
+      aspect_ratio: 1.4  # Soft, elongated
+      margin_x: 12  # Gentle, not too wide movement
+      margin_y: 12
+    
+    highlight:
+      size_divisor: 4  # Larger, softer highlight
+      offset_x_divisor: 5
+      offset_y_divisor: 5
+    
+    gradient:
+      layers: 7  # More layers for softer gradient
+      outer_color: 45  # Softer, not too dark
+      inner_color: 5
+    
+    # Eye motion - SMOOTH AND CALM
+    motion:
+      smoothing_factor: 0.1  # Very smooth, gentle movement
+    
+    # Blink settings - REGULAR, SOFT
+    blink:
+      enabled: true
+      interval_min: 3.5  # Normal blink rate
+      interval_max: 6.0
+      duration: 0.18  # Soft, relaxed blink
+    
+    saccade:
+      enabled: false  # No sudden movements
