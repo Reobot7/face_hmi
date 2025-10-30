@@ -177,63 +177,64 @@ class FaceHMINode(Node):
             return (255, 0, 0)  # Red
     
     def draw_eye(self, center_x: int, center_y: int, is_left: bool):
-        """Draw a single eye with pupil and health ring"""
-        eye_radius = min(self.width, self.height) // 8
-        pupil_radius = eye_radius // 3
-        ring_width = 8
+        """Draw a single eye with moving pupil"""
+        # Eye dimensions (oval shape)
+        eye_width = min(self.width, self.height) // 4
+        eye_height = int(eye_width * 1.2)  # Slightly taller oval
         
-        # Get colors
-        activity_color = self.get_activity_color()
+        # Pupil dimensions
+        pupil_width = eye_width // 2
+        pupil_height = int(pupil_width * 1.3)  # Oval pupil
         
-        # Draw eye background (sclera)
-        pygame.draw.circle(self.screen, (255, 255, 255), (center_x, center_y), eye_radius)
+        # Highlight dimensions
+        highlight_radius = pupil_width // 5
+        
+        # Draw white of the eye (sclera) - oval
+        eye_rect = pygame.Rect(
+            center_x - eye_width // 2,
+            center_y - eye_height // 2,
+            eye_width,
+            eye_height
+        )
+        pygame.draw.ellipse(self.screen, (255, 255, 255), eye_rect)
         
         # Calculate pupil position based on attention
-        max_offset = eye_radius - pupil_radius - 10
-        pupil_x = int(center_x + self.attention_x * max_offset)
-        pupil_y = int(center_y - self.attention_y * max_offset)  # Invert Y for screen coords
+        # Limit movement to stay within the white part
+        max_offset_x = (eye_width - pupil_width) // 2 - 10
+        max_offset_y = (eye_height - pupil_height) // 2 - 10
         
-        # Draw pupil
-        pygame.draw.circle(self.screen, (0, 0, 0), (pupil_x, pupil_y), pupil_radius)
+        pupil_x = int(center_x + self.attention_x * max_offset_x)
+        pupil_y = int(center_y - self.attention_y * max_offset_y)  # Invert Y for screen coords
         
-        # Draw iris with activity color
-        iris_radius = pupil_radius + 15
-        pygame.draw.circle(self.screen, activity_color, (pupil_x, pupil_y), iris_radius, 3)
+        # Draw pupil with gradient effect (dark to darker)
+        pupil_rect = pygame.Rect(
+            pupil_x - pupil_width // 2,
+            pupil_y - pupil_height // 2,
+            pupil_width,
+            pupil_height
+        )
         
-        # Draw health ring
-        if is_left:
-            # Left eye: battery
-            color = self.get_battery_color()
-            arc_angle = (self.battery_pct / 100.0) * 2 * math.pi
-        else:
-            # Right eye: temperature
-            color = self.get_temp_color()
-            # Map temperature to arc (0-100°C range)
-            temp_normalized = min(100.0, max(0.0, self.temp_c)) / 100.0
-            arc_angle = temp_normalized * 2 * math.pi
+        # Create gradient by drawing multiple ellipses
+        for i in range(5):
+            scale = 1.0 - (i * 0.15)
+            color_value = int(40 - i * 8)  # Gradient from dark gray to black
+            
+            gradient_rect = pygame.Rect(
+                pupil_x - int(pupil_width * scale) // 2,
+                pupil_y - int(pupil_height * scale) // 2,
+                int(pupil_width * scale),
+                int(pupil_height * scale)
+            )
+            pygame.draw.ellipse(self.screen, (color_value, color_value, color_value), gradient_rect)
         
-        # Draw arc as segments
-        if arc_angle > 0:
-            segments = 60
-            for i in range(int(segments * arc_angle / (2 * math.pi))):
-                angle1 = -math.pi / 2 + (i / segments) * 2 * math.pi
-                angle2 = -math.pi / 2 + ((i + 1) / segments) * 2 * math.pi
-                
-                x1 = center_x + int((eye_radius + 5) * math.cos(angle1))
-                y1 = center_y + int((eye_radius + 5) * math.sin(angle1))
-                x2 = center_x + int((eye_radius + 5) * math.cos(angle2))
-                y2 = center_y + int((eye_radius + 5) * math.sin(angle2))
-                
-                pygame.draw.line(self.screen, color, (x1, y1), (x2, y2), ring_width)
-        
-        # Draw status icons
-        icon_y = center_y + eye_radius + 30
-        if is_left and self.charging:
-            # Charging icon (lightning bolt)
-            self.draw_text('⚡', center_x, icon_y, (255, 200, 0), size=24)
-        elif not is_left and not self.net_ok:
-            # Network warning icon
-            self.draw_text('⚠', center_x, icon_y, (255, 100, 0), size=24)
+        # Draw highlight (white spot)
+        highlight_offset_x = -pupil_width // 6
+        highlight_offset_y = -pupil_height // 6
+        highlight_pos = (
+            pupil_x + highlight_offset_x,
+            pupil_y + highlight_offset_y
+        )
+        pygame.draw.circle(self.screen, (255, 255, 255), highlight_pos, highlight_radius)
     
     def draw_text(self, text: str, x: int, y: int, color: Tuple[int, int, int], size: int = 20):
         """Draw text centered at position"""
@@ -252,13 +253,26 @@ class FaceHMINode(Node):
         
         # Battery and temperature
         hud_y += 30
-        self.draw_text(f'Battery: {self.battery_pct:.1f}%  Temp: {self.temp_c:.1f}°C', 
-                      self.width // 2, hud_y, hud_color, 20)
+        battery_color = self.get_battery_color()
+        temp_color = self.get_temp_color()
+        
+        battery_text = f'Battery: {self.battery_pct:.1f}%'
+        temp_text = f'Temp: {self.temp_c:.1f}°C'
+        
+        # Draw battery info
+        self.draw_text(battery_text, self.width // 2 - 150, hud_y, battery_color, 20)
+        
+        # Draw charging icon if charging
+        if self.charging:
+            self.draw_text('⚡', self.width // 2 - 50, hud_y, (255, 200, 0), 24)
+        
+        # Draw temperature info
+        self.draw_text(temp_text, self.width // 2 + 100, hud_y, temp_color, 20)
         
         # Network status
         if not self.net_ok:
             hud_y += 30
-            self.draw_text('Network Disconnected', self.width // 2, hud_y, (255, 100, 0), 20)
+            self.draw_text('⚠ Network Disconnected', self.width // 2, hud_y, (255, 100, 0), 20)
         
         # Attention label
         if self.attention_label:
@@ -271,7 +285,7 @@ class FaceHMINode(Node):
         self.screen.fill((0, 0, 0))
         
         # Calculate eye positions
-        eye_spacing = self.width // 4
+        eye_spacing = self.width // 3
         eye_y = self.height // 2
         left_eye_x = self.width // 2 - eye_spacing // 2
         right_eye_x = self.width // 2 + eye_spacing // 2
