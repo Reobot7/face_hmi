@@ -118,18 +118,40 @@ ros2 launch face_hmi test_face_hmi.launch.py
 
 This launches both the display and a test publisher that randomly moves the eyes.
 
-## Customization
+## Configuration
 
-See the [Customization Guide](docs/CUSTOMIZATION.md) for detailed instructions on:
-- Adjusting eye size and shape
-- Changing pupil size and movement range
-- Tuning smoothness of eye movements
-- Modifying eye spacing
+faceHMI uses YAML configuration files to manage appearance and motion settings separately.
+
+### Quick Start with Config Files
+
+```bash
+# Use default configuration
+ros2 launch face_hmi face_hmi_with_config.launch.py
+
+# Use large eyes preset
+ros2 launch face_hmi face_hmi_with_config.launch.py \
+    config_file:=$(ros2 pkg prefix face_hmi)/share/face_hmi/config/large_eyes.yaml
+
+# Use quick motion preset
+ros2 launch face_hmi face_hmi_with_config.launch.py \
+    config_file:=$(ros2 pkg prefix face_hmi)/share/face_hmi/config/quick_motion.yaml
+```
+
+### Available Configuration Files
+
+- `config/default.yaml` - Default settings
+- `config/eye_appearance.yaml` - Appearance-only settings
+- `config/eye_motion.yaml` - Motion-only settings
+- `config/large_eyes.yaml` - Preset for large expressive eyes
+- `config/quick_motion.yaml` - Preset for quick responsive motion
+
+See the [Configuration Guide](docs/CONFIGURATION.md) for detailed parameter reference and custom configuration creation.
 
 ## Documentation
 
 - [Usage Guide](docs/USAGE.md) - Detailed usage instructions and examples
-- [Customization Guide](docs/CUSTOMIZATION.md) - How to customize the appearance
+- [Configuration Guide](docs/CONFIGURATION.md) - YAML configuration file reference
+- [Customization Guide](docs/CUSTOMIZATION.md) - Code-level customization (deprecated, use config files instead)
 - [Roadmap](docs/ROADMAP.md) - Future features and development plans
 
 ## Future Work

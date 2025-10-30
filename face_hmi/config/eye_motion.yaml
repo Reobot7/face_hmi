@@ -1,0 +1,29 @@
+/**:
+  ros__parameters:
+    # Eye movement settings
+    motion:
+      # Smoothing factor for interpolation (0.0 - 1.0)
+      # Lower = smoother but slower response
+      # Higher = faster but more jerky
+      # 0.05 = very smooth, 0.15 = balanced, 0.3 = quick, 1.0 = instant
+      smoothing_factor: 0.15
+      
+      # Maximum movement speed (optional, for future use)
+      # max_speed: 1.0
+      
+      # Minimum movement threshold (optional, for future use)
+      # Values below this are ignored to prevent jitter
+      # min_threshold: 0.01
+    
+    # Blink settings (for future implementation)
+    blink:
+      enabled: false
+      # interval_min: 3.0  # seconds
+      # interval_max: 8.0  # seconds
+      # duration: 0.15     # seconds
+    
+    # Saccade settings (for future implementation)
+    # Saccades are rapid eye movements
+    saccade:
+      enabled: false
+      # speed_multiplier: 3.0  # Faster than normal movement

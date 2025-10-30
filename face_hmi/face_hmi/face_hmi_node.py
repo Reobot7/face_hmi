@@ -28,12 +28,36 @@ class FaceHMINode(Node):
     def __init__(self):
         super().__init__('face_hmi')
         
-        # Declare parameters
+        # Declare camera and display parameters
         self.declare_parameter('camera_frame', 'camera_optical_frame')
         self.declare_parameter('fov_x_deg', 90.0)
         self.declare_parameter('fov_y_deg', 60.0)
         self.declare_parameter('fullscreen', True)
         self.declare_parameter('fps', 60)
+        
+        # Declare eye appearance parameters
+        self.declare_parameter('eye.width_divisor', 4)
+        self.declare_parameter('eye.aspect_ratio', 1.2)
+        self.declare_parameter('eye.spacing_divisor', 3)
+        self.declare_parameter('eye.vertical_position', 0.5)
+        
+        self.declare_parameter('pupil.size_divisor', 2.0)
+        self.declare_parameter('pupil.aspect_ratio', 1.3)
+        self.declare_parameter('pupil.margin_x', 10)
+        self.declare_parameter('pupil.margin_y', 10)
+        
+        self.declare_parameter('highlight.size_divisor', 5)
+        self.declare_parameter('highlight.offset_x_divisor', 6)
+        self.declare_parameter('highlight.offset_y_divisor', 6)
+        
+        self.declare_parameter('gradient.layers', 5)
+        self.declare_parameter('gradient.outer_color', 40)
+        self.declare_parameter('gradient.inner_color', 0)
+        
+        # Declare motion parameters
+        self.declare_parameter('motion.smoothing_factor', 0.15)
+        self.declare_parameter('blink.enabled', False)
+        self.declare_parameter('saccade.enabled', False)
         
         # Get parameters
         self.camera_frame = self.get_parameter('camera_frame').value
@@ -41,6 +65,28 @@ class FaceHMINode(Node):
         self.fov_y = math.radians(self.get_parameter('fov_y_deg').value)
         self.fullscreen = self.get_parameter('fullscreen').value
         self.fps = self.get_parameter('fps').value
+        
+        # Get appearance parameters
+        self.eye_width_divisor = self.get_parameter('eye.width_divisor').value
+        self.eye_aspect_ratio = self.get_parameter('eye.aspect_ratio').value
+        self.eye_spacing_divisor = self.get_parameter('eye.spacing_divisor').value
+        self.eye_vertical_position = self.get_parameter('eye.vertical_position').value
+        
+        self.pupil_size_divisor = self.get_parameter('pupil.size_divisor').value
+        self.pupil_aspect_ratio = self.get_parameter('pupil.aspect_ratio').value
+        self.pupil_margin_x = self.get_parameter('pupil.margin_x').value
+        self.pupil_margin_y = self.get_parameter('pupil.margin_y').value
+        
+        self.highlight_size_divisor = self.get_parameter('highlight.size_divisor').value
+        self.highlight_offset_x_divisor = self.get_parameter('highlight.offset_x_divisor').value
+        self.highlight_offset_y_divisor = self.get_parameter('highlight.offset_y_divisor').value
+        
+        self.gradient_layers = self.get_parameter('gradient.layers').value
+        self.gradient_outer_color = self.get_parameter('gradient.outer_color').value
+        self.gradient_inner_color = self.get_parameter('gradient.inner_color').value
+        
+        # Get motion parameters
+        self.smoothing_factor = self.get_parameter('motion.smoothing_factor').value
         
         # Initialize pygame
         pygame.init()
@@ -62,7 +108,6 @@ class FaceHMINode(Node):
         self.target_attention_y = 0.0  # Target position -1 to 1
         self.current_attention_x = 0.0  # Current interpolated position
         self.current_attention_y = 0.0  # Current interpolated position
-        self.smoothing_factor = 0.15  # Lower = smoother (0.05-0.3 recommended)
         self.activity = 'idle'
         self.attention_label = ''
         self.battery_pct = 100.0
@@ -98,6 +143,8 @@ class FaceHMINode(Node):
         self.flash_phase = 0.0
         
         self.get_logger().info('faceHMI node started')
+        self.get_logger().info(f'Eye appearance: width_div={self.eye_width_divisor}, aspect={self.eye_aspect_ratio}')
+        self.get_logger().info(f'Motion: smoothing={self.smoothing_factor}')
     
     def attention_callback(self, msg: Vector3):
         """Direct attention control"""
@@ -181,16 +228,16 @@ class FaceHMINode(Node):
     
     def draw_eye(self, center_x: int, center_y: int, is_left: bool):
         """Draw a single eye with moving pupil"""
-        # Eye dimensions (oval shape)
-        eye_width = min(self.width, self.height) // 4
-        eye_height = int(eye_width * 1.2)  # Slightly taller oval
+        # Eye dimensions (oval shape) - from config
+        eye_width = min(self.width, self.height) // self.eye_width_divisor
+        eye_height = int(eye_width * self.eye_aspect_ratio)
         
-        # Pupil dimensions
-        pupil_width = eye_width // 2
-        pupil_height = int(pupil_width * 1.3)  # Oval pupil
+        # Pupil dimensions - from config
+        pupil_width = int(eye_width / self.pupil_size_divisor)
+        pupil_height = int(pupil_width * self.pupil_aspect_ratio)
         
-        # Highlight dimensions
-        highlight_radius = pupil_width // 5
+        # Highlight dimensions - from config
+        highlight_radius = int(pupil_width / self.highlight_size_divisor)
         
         # Draw white of the eye (sclera) - oval
         eye_rect = pygame.Rect(
@@ -202,25 +249,20 @@ class FaceHMINode(Node):
         pygame.draw.ellipse(self.screen, (255, 255, 255), eye_rect)
         
         # Calculate pupil position based on attention
-        # Limit movement to stay within the white part
-        max_offset_x = (eye_width - pupil_width) // 2 - 10
-        max_offset_y = (eye_height - pupil_height) // 2 - 10
+        # Limit movement to stay within the white part - from config
+        max_offset_x = (eye_width - pupil_width) // 2 - self.pupil_margin_x
+        max_offset_y = (eye_height - pupil_height) // 2 - self.pupil_margin_y
         
         pupil_x = int(center_x + self.current_attention_x * max_offset_x)
         pupil_y = int(center_y - self.current_attention_y * max_offset_y)  # Invert Y for screen coords
         
-        # Draw pupil with gradient effect (dark to darker)
-        pupil_rect = pygame.Rect(
-            pupil_x - pupil_width // 2,
-            pupil_y - pupil_height // 2,
-            pupil_width,
-            pupil_height
-        )
-        
-        # Create gradient by drawing multiple ellipses
-        for i in range(5):
-            scale = 1.0 - (i * 0.15)
-            color_value = int(40 - i * 8)  # Gradient from dark gray to black
+        # Draw pupil with gradient effect - from config
+        for i in range(self.gradient_layers):
+            scale = 1.0 - (i * (1.0 / self.gradient_layers))
+            # Interpolate color from outer to inner
+            color_value = int(self.gradient_outer_color - 
+                            (self.gradient_outer_color - self.gradient_inner_color) * 
+                            (i / self.gradient_layers))
             
             gradient_rect = pygame.Rect(
                 pupil_x - int(pupil_width * scale) // 2,
@@ -230,9 +272,9 @@ class FaceHMINode(Node):
             )
             pygame.draw.ellipse(self.screen, (color_value, color_value, color_value), gradient_rect)
         
-        # Draw highlight (white spot)
-        highlight_offset_x = -pupil_width // 6
-        highlight_offset_y = -pupil_height // 6
+        # Draw highlight (white spot) - from config
+        highlight_offset_x = -int(pupil_width / self.highlight_offset_x_divisor)
+        highlight_offset_y = -int(pupil_height / self.highlight_offset_y_divisor)
         highlight_pos = (
             pupil_x + highlight_offset_x,
             pupil_y + highlight_offset_y
@@ -284,7 +326,7 @@ class FaceHMINode(Node):
     
     def update_attention_interpolation(self):
         """Smoothly interpolate attention position"""
-        # Linear interpolation (lerp)
+        # Linear interpolation (lerp) - smoothing factor from config
         self.current_attention_x += (self.target_attention_x - self.current_attention_x) * self.smoothing_factor
         self.current_attention_y += (self.target_attention_y - self.current_attention_y) * self.smoothing_factor
     
@@ -296,9 +338,9 @@ class FaceHMINode(Node):
         # Clear screen (black background)
         self.screen.fill((0, 0, 0))
         
-        # Calculate eye positions
-        eye_spacing = self.width // 3
-        eye_y = self.height // 2
+        # Calculate eye positions - from config
+        eye_spacing = self.width // self.eye_spacing_divisor
+        eye_y = int(self.height * self.eye_vertical_position)
         left_eye_x = self.width // 2 - eye_spacing // 2
         right_eye_x = self.width // 2 + eye_spacing // 2
         

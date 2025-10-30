@@ -1,0 +1,43 @@
+/**:
+  ros__parameters:
+    # Camera and projection settings
+    camera_frame: "camera_optical_frame"
+    fov_x_deg: 90.0
+    fov_y_deg: 60.0
+    
+    # Display settings
+    fullscreen: true
+    fps: 60
+    
+    # Eye appearance settings - DEFAULT
+    eye:
+      width_divisor: 4
+      aspect_ratio: 1.2
+      spacing_divisor: 3
+      vertical_position: 0.5
+    
+    pupil:
+      size_divisor: 2.0
+      aspect_ratio: 1.3
+      margin_x: 5  # Wider movement range
+      margin_y: 5
+    
+    highlight:
+      size_divisor: 5
+      offset_x_divisor: 6
+      offset_y_divisor: 6
+    
+    gradient:
+      layers: 5
+      outer_color: 40
+      inner_color: 0
+    
+    # Eye motion settings - QUICK MOTION
+    motion:
+      smoothing_factor: 0.35  # Much faster response (default: 0.15)
+    
+    blink:
+      enabled: false
+    
+    saccade:
+      enabled: false
