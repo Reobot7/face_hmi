@@ -58,8 +58,11 @@ class FaceHMINode(Node):
         self.get_logger().info(f'Display initialized: {self.width}x{self.height}')
         
         # State variables
-        self.attention_x = 0.0  # -1 to 1
-        self.attention_y = 0.0  # -1 to 1
+        self.target_attention_x = 0.0  # Target position -1 to 1
+        self.target_attention_y = 0.0  # Target position -1 to 1
+        self.current_attention_x = 0.0  # Current interpolated position
+        self.current_attention_y = 0.0  # Current interpolated position
+        self.smoothing_factor = 0.15  # Lower = smoother (0.05-0.3 recommended)
         self.activity = 'idle'
         self.attention_label = ''
         self.battery_pct = 100.0
@@ -98,8 +101,8 @@ class FaceHMINode(Node):
     
     def attention_callback(self, msg: Vector3):
         """Direct attention control"""
-        self.attention_x = max(-1.0, min(1.0, msg.x))
-        self.attention_y = max(-1.0, min(1.0, msg.y))
+        self.target_attention_x = max(-1.0, min(1.0, msg.x))
+        self.target_attention_y = max(-1.0, min(1.0, msg.y))
     
     def attention_target_callback(self, msg: PointStamped):
         """Transform 3D point to screen coordinates"""
@@ -119,8 +122,8 @@ class FaceHMINode(Node):
                 angle_y = math.atan2(point_cam.point.y, point_cam.point.z)
                 
                 # Normalize by FOV
-                self.attention_x = max(-1.0, min(1.0, angle_x / (self.fov_x / 2)))
-                self.attention_y = max(-1.0, min(1.0, angle_y / (self.fov_y / 2)))
+                self.target_attention_x = max(-1.0, min(1.0, angle_x / (self.fov_x / 2)))
+                self.target_attention_y = max(-1.0, min(1.0, angle_y / (self.fov_y / 2)))
         
         except Exception as e:
             self.get_logger().warn(f'TF transform failed: {e}')
@@ -203,8 +206,8 @@ class FaceHMINode(Node):
         max_offset_x = (eye_width - pupil_width) // 2 - 10
         max_offset_y = (eye_height - pupil_height) // 2 - 10
         
-        pupil_x = int(center_x + self.attention_x * max_offset_x)
-        pupil_y = int(center_y - self.attention_y * max_offset_y)  # Invert Y for screen coords
+        pupil_x = int(center_x + self.current_attention_x * max_offset_x)
+        pupil_y = int(center_y - self.current_attention_y * max_offset_y)  # Invert Y for screen coords
         
         # Draw pupil with gradient effect (dark to darker)
         pupil_rect = pygame.Rect(
@@ -279,8 +282,17 @@ class FaceHMINode(Node):
             label_y = self.height - 50
             self.draw_text(self.attention_label, self.width // 2, label_y, (255, 255, 255), 28)
     
+    def update_attention_interpolation(self):
+        """Smoothly interpolate attention position"""
+        # Linear interpolation (lerp)
+        self.current_attention_x += (self.target_attention_x - self.current_attention_x) * self.smoothing_factor
+        self.current_attention_y += (self.target_attention_y - self.current_attention_y) * self.smoothing_factor
+    
     def render(self):
         """Main render loop"""
+        # Update smooth interpolation
+        self.update_attention_interpolation()
+        
         # Clear screen (black background)
         self.screen.fill((0, 0, 0))
         

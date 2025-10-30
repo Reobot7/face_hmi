@@ -108,6 +108,30 @@ For optimal performance on a Raspberry Pi, ensure you are using a lightweight de
 -   `fullscreen` (bool, default: `true`): If `true`, the display runs in fullscreen mode.
 -   `fps` (int, default: `60`): Rendering frame rate.
 
+## Testing
+
+To test the display with random eye movements:
+
+```bash
+ros2 launch face_hmi test_face_hmi.launch.py
+```
+
+This launches both the display and a test publisher that randomly moves the eyes.
+
+## Customization
+
+See the [Customization Guide](docs/CUSTOMIZATION.md) for detailed instructions on:
+- Adjusting eye size and shape
+- Changing pupil size and movement range
+- Tuning smoothness of eye movements
+- Modifying eye spacing
+
+## Documentation
+
+- [Usage Guide](docs/USAGE.md) - Detailed usage instructions and examples
+- [Customization Guide](docs/CUSTOMIZATION.md) - How to customize the appearance
+- [Roadmap](docs/ROADMAP.md) - Future features and development plans
+
 ## Future Work
 
 See the [ROADMAP.md](docs/ROADMAP.md) for planned features and long-term vision.

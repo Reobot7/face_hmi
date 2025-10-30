@@ -24,6 +24,7 @@ setup(
     entry_points={
         'console_scripts': [
             'face_hmi = face_hmi.face_hmi_node:main',
+            'test_publisher = face_hmi.test_publisher:main',
         ],
     },
 )
